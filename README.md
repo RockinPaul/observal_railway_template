@@ -41,10 +41,10 @@ On each developer machine:
 ```
 curl -fsSL https://raw.githubusercontent.com/Observal/Observal/main/install.sh | bash
 observal auth login --server https://<web-domain>
-observal doctor --patch
+observal doctor patch --all-harnesses
 ```
 
-`observal doctor --patch` detects the local harness, installs the telemetry hooks, and wires `/observal` commands. Everything the CLI sends goes to `/api/v1/...` on the web domain.
+`observal doctor patch --all-harnesses` installs the telemetry hooks and `/observal` commands into every harness found on the machine; plain `observal doctor` only reports. Everything the CLI sends goes to `/api/v1/...` on the web domain.
 
 ## Variables
 
@@ -57,10 +57,11 @@ observal doctor --patch
 | `CLICKHOUSE_URL` | `clickhouse://…${{ClickHouse.*}}…/observal` | Built from the ClickHouse service. |
 | `REDIS_URL` | `${{Redis.REDIS_URL}}` | Built from the Redis service. |
 | `JWT_KEY_DIR` | `/data/keys` | EC signing key pair, generated on first start, kept on the `api` volume. |
-| `CORS_ALLOWED_ORIGINS` | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}` | Imported into the admin settings on first start. |
+| `CORS_ALLOWED_ORIGINS` | `https://${{web.RAILWAY_PUBLIC_DOMAIN}}` | Browser origins allowed by the API's CORS middleware, read from the environment on every start. |
+| `MAX_REQUEST_SIZE_MB` | unset (10) | Request body limit of the API; `web` enforces the same 10 MB at nginx. Raise both to allow bigger uploads. |
 | `SEED_DEMO_ACCOUNTS` | `true` | Seed the four demo accounts when the database has no users. |
 | `DEMO_*_EMAIL`, `DEMO_*_PASSWORD` | `*@demo.example`, generated | Super admin, admin, reviewer, and user demo accounts. |
-| `RAILWAY_RUN_UID` | `0` | Lets the container write its signing keys to the root-owned Railway volume. |
+| `RAILWAY_RUN_UID` | `0` | Starts the container as root so it can hand the root-owned volume to upstream's `appuser`; migrations and the server then run as `appuser`. |
 | `LOG_FORMAT`, `LOG_LEVEL` | `json`, `INFO` | Boot-time logging. |
 | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_ALLOWED_DOMAINS` | unset | Optional; imported once into the admin settings. |
 
@@ -74,7 +75,7 @@ Everything else (eval models, security policies, retention, SSO, trusted proxies
 - `worker` waits until the API has migrated the database, then runs the arq worker. It has no domain and no healthcheck.
 - `web` renders its nginx config at start with Railway's DNS resolver and a variable upstream, so it keeps working when `api` redeploys and changes address. It also patches one line of the upstream bundle: the built UI opens GraphQL subscriptions on `<host>:8000` unless a build-time variable was set, which cannot work on Railway; the patch points it at the page's own origin, which the proxy forwards with websocket upgrade headers. The start script refuses to run if that line is not found, so an upstream change cannot ship a silently broken UI.
 - ClickHouse carries upstream's `config.d` and `users.d` tuning for small containers (per-query memory caps, async inserts, log retention). It needs roughly 1 to 2 GB of memory; the rest of the stack is small. Upstream's smallest sizing guide is 2 vCPU and 4 to 6 GB for a team of ten.
-- Client addresses: Railway's edge proxy passes the visitor's address in `X-Forwarded-For`, `web` forwards that header untouched, and the API, which trusts private-network peers by default, records the real client in the audit log and rate limiter. If you put another proxy such as Cloudflare in front of the Railway domain, add its ranges under Settings, Network, Trusted Proxies, as upstream's [trusted proxies guide](https://github.com/Observal/Observal/blob/main/docs/self-hosting/trusted-proxies.md) describes.
+- Client addresses: Railway's edge proxy sends `X-Forwarded-For` as the visitor's address followed by the edge's own public address. `web` strips that last hop and passes the rest on, and the API, which trusts private-network peers by default and reads the header right to left, records the real client in the audit log and rate limiter. If you put another proxy such as Cloudflare in front of the Railway domain, it stays in the chain: add its ranges under Settings, Network, Trusted Proxies, as upstream's [trusted proxies guide](https://github.com/Observal/Observal/blob/main/docs/self-hosting/trusted-proxies.md) describes.
 
 ## Upgrading Observal
 

@@ -31,7 +31,7 @@ Hosting Observal on Railway means six services wired over the private network, w
 - `worker`: same image with `OBSERVAL_ROLE=worker`, waits for the migrated schema, runs the arq worker.
 - `Postgres`: Railway's `postgres-ssl:18` image with a volume. `Redis`: Railway's `redis:8.2` with a password and a volume. `ClickHouse`: `clickhouse/clickhouse-server:26.6` with upstream's small-container tuning and a volume.
 
-First login: sign in on the web domain as the seeded super admin, whose email and generated password are the `DEMO_SUPER_ADMIN_EMAIL` and `DEMO_SUPER_ADMIN_PASSWORD` variables on `api`. Create your real super admin under Settings, Users, sign in as it, and delete the demo accounts there or with `observal admin delete-user <email>`. Add teammates the same way or connect SSO. Developers connect with `observal auth login --server https://<web-domain>` followed by `observal doctor --patch`.
+First login: sign in on the web domain as the seeded super admin, whose email and generated password are the `DEMO_SUPER_ADMIN_EMAIL` and `DEMO_SUPER_ADMIN_PASSWORD` variables on `api`. Create your real super admin under Settings, Users, sign in as it, and delete the demo accounts there or with `observal admin delete-user <email>`. Add teammates the same way or connect SSO. Developers connect with `observal auth login --server https://<web-domain>` followed by `observal doctor patch --all-harnesses`.
 
 ## Why Deploy Observal on Railway?
 
