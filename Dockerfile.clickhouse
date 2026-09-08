@@ -1,0 +1,5 @@
+# ClickHouse for Observal's telemetry, with upstream's small-container tuning baked in
+# (upstream mounts these files in docker/clickhouse; Railway has no config mounts).
+FROM clickhouse/clickhouse-server:26.6
+COPY clickhouse/config.d/observal-memory.xml /etc/clickhouse-server/config.d/observal-memory.xml
+COPY clickhouse/users.d/observal-memory.xml /etc/clickhouse-server/users.d/observal-memory.xml

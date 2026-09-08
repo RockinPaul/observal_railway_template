@@ -1,0 +1,13 @@
+# Observal API and worker for Railway, from the upstream image.
+# Upgrade Observal by bumping this tag together with the one in Dockerfile.web.
+FROM ghcr.io/observal/observal-api:1.13.1
+
+# OBSERVAL_ROLE=api runs upstream's init (schema, Alembic, ClickHouse migrations) then uvicorn;
+# OBSERVAL_ROLE=worker waits for the schema and runs the arq worker.
+COPY --chmod=755 api-entrypoint.sh /app/api-entrypoint.sh
+ENV PORT=8000 \
+    JWT_KEY_DIR=/data/keys \
+    OBSERVAL_ROLE=api \
+    LOG_FORMAT=json
+EXPOSE 8000
+CMD ["/app/api-entrypoint.sh"]

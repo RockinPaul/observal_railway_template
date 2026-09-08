@@ -1,0 +1,12 @@
+# Observal web UI for Railway, from the upstream image, with our own nginx config.
+# Upstream's config proxies /api to the compose hostname observal-api and nginx caches upstream
+# addresses; on Railway the api's private address changes on redeploy, so the config resolves
+# API_UPSTREAM through Railway's DNS on every request. Same tag as Dockerfile.api.
+FROM ghcr.io/observal/observal-web:1.13.1
+COPY web/default.conf /etc/nginx/templates/observal.conf.in
+COPY --chmod=755 web/entrypoint.sh /app-entrypoint.sh
+ENV PORT=3000 \
+    API_UPSTREAM=http://api.railway.internal:8000
+EXPOSE 3000
+ENTRYPOINT ["/app-entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,0 +1,6 @@
+.DS_Store
+*.log
+.env*
+.omc/
+.claude/
+__pycache__/
