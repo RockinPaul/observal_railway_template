@@ -3,6 +3,8 @@
 set -eu
 : "${PORT:=3000}"
 : "${API_UPSTREAM:=http://api.railway.internal:8000}"
+# A trailing slash would make nginx replace the request URI instead of forwarding it.
+API_UPSTREAM="${API_UPSTREAM%/}"
 
 # nginx needs an explicit resolver for variable upstreams; take the container's.
 ns="$(awk '/^nameserver/ {print $2; exit}' /etc/resolv.conf)"
