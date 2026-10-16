@@ -41,6 +41,27 @@ case "$OBSERVAL_ROLE" in
       RUN_AS=""
     fi
     $RUN_AS /app/entrypoint.sh
+    if [ "${USAGE_PING_DEFAULT:-off}" = off ]; then
+      # Observal 1.15.1 reports aggregate usage to usage.observal.io every six hours unless Admin >
+      # Settings > Usage Reporting is off, and its migration 045 erases a stored choice. Store "off"
+      # only when no choice is stored, so a deployment opts in from that panel and keeps it.
+      $RUN_AS "$PY" - <<'PYEOF'
+import asyncio
+from sqlalchemy import text
+from database import engine
+from services.dynamic_settings import invalidate
+async def main():
+    async with engine.begin() as conn:
+        res = await conn.execute(text(
+            "INSERT INTO enterprise_config (id, key, value, updated_at) "
+            "VALUES (gen_random_uuid(), 'usage_ping.enabled', 'false', now()) ON CONFLICT (key) DO NOTHING"))
+    await engine.dispose()
+    if res.rowcount:
+        await invalidate("usage_ping.enabled")
+        print("usage reporting set to off (no stored choice); turn it on in Admin > Settings > Usage Reporting")
+asyncio.run(main())
+PYEOF
+    fi
     export SKIP_DDL_ON_STARTUP=true
     # An empty host makes uvicorn/asyncio open both an IPv4 and an IPv6 listener; '::' alone is
     # IPv6-only because asyncio sets IPV6_V6ONLY on explicit IPv6 hosts.

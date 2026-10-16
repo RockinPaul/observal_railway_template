@@ -26,8 +26,8 @@ Hosting Observal on Railway means six services wired over the private network, w
 
 ### Implementation Details
 
-- `web`: `ghcr.io/observal/observal-web:1.13.1` with a Railway-aware nginx config (variable upstream, DNS resolver, websocket upgrade for GraphQL subscriptions), healthcheck `/`, public domain, port 3000.
-- `api`: `ghcr.io/observal/observal-api:1.13.1`, runs upstream's init script then uvicorn on port 8000, healthcheck `/readyz`, volume `/data` for the JWT signing keys.
+- `web`: `ghcr.io/observal/observal-web:1.15.1` with a Railway-aware nginx config (variable upstream, DNS resolver, websocket upgrade for GraphQL subscriptions), healthcheck `/`, public domain, port 3000.
+- `api`: `ghcr.io/observal/observal-api:1.15.1`, runs upstream's init script then uvicorn on port 8000, healthcheck `/readyz`, volume `/data` for the JWT signing keys.
 - `worker`: same image with `OBSERVAL_ROLE=worker`, waits for the migrated schema, runs the arq worker.
 - `Postgres`: Railway's `postgres-ssl:18` image with a volume. `Redis`: Railway's `redis:8.2` with a password and a volume. `ClickHouse`: `clickhouse/clickhouse-server:26.6` with upstream's small-container tuning and a volume.
 

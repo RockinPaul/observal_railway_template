@@ -2,4 +2,5 @@
 # (upstream mounts these files in docker/clickhouse; Railway has no config mounts).
 FROM clickhouse/clickhouse-server:26.6
 COPY clickhouse/config.d/observal-memory.xml /etc/clickhouse-server/config.d/observal-memory.xml
+COPY clickhouse/config.d/observal-telemetry.xml /etc/clickhouse-server/config.d/observal-telemetry.xml
 COPY clickhouse/users.d/observal-memory.xml /etc/clickhouse-server/users.d/observal-memory.xml
